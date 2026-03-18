@@ -1,0 +1,6 @@
+Question,Generated SQL,Reference SQL,sql_correctness,helpfulness
+What was the budget of Product 12?,SELECT `2017 Budgets` FROM `2017_budgets` WHERE `Product Name` = 'Product 12' LIMIT 100,SELECT `2017 Budgets` FROM `2017_budgets` WHERE `Product Name` = 'Product 12';,1,4
+What are the names of all products?,SELECT `Product Name` FROM products LIMIT 100,SELECT `Product Name` FROM products;,1,3
+List all customer names.,SELECT `Customer Names` FROM customers LIMIT 100,SELECT `Customer Names` FROM customers;,1,3
+Find the name and state of all regions.,"SELECT name, state FROM regions LIMIT 100","SELECT name, state FROM regions;",1,4
+What is the name of the customer with Customer Index 1?,SELECT `Customer Names` FROM customers WHERE `Customer Index` = 1 LIMIT 100,SELECT `Customer Names` FROM customers WHERE `Customer Index` = 1;,1,3
