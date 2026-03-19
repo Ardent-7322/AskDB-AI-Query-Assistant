@@ -1,6 +1,6 @@
 # AskDB Chatbot - (AI query assistant)
 
-I built this project to solve a problem I kept seeing — people on the team had questions about the data but had to wait for someone technical to pull a report. This chatbot removes that bottleneck entirely. Type a question in plain English, get an answer straight from the database.
+I built this project to solve a problem I kept seeing - people on the team had questions about the data but had to wait for someone technical to pull a report. This chatbot removes that bottleneck entirely. Type a question in plain English, get an answer straight from the database.
 
 It started as a MySQL project but I extended it to support PostgreSQL and SQLite too, which makes it easy to plug into any existing backend - including my own [Go Ecommerce](https://github.com/yourusername/go-ecommerce) project that runs on PostgreSQL.
 
