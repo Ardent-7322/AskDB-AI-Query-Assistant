@@ -1,8 +1,8 @@
-# AskDB Chatbot
+# AskDB Chatbot - (AI query assistant)
 
 I built this project to solve a problem I kept seeing — people on the team had questions about the data but had to wait for someone technical to pull a report. This chatbot removes that bottleneck entirely. Type a question in plain English, get an answer straight from the database.
 
-It started as a MySQL project but I extended it to support PostgreSQL and SQLite too, which makes it easy to plug into any existing backend — including my own [Go Ecommerce](https://github.com/yourusername/go-ecommerce) project that runs on PostgreSQL.
+It started as a MySQL project but I extended it to support PostgreSQL and SQLite too, which makes it easy to plug into any existing backend - including my own [Go Ecommerce](https://github.com/yourusername/go-ecommerce) project that runs on PostgreSQL.
 
 ---
 
@@ -32,12 +32,12 @@ Works across MySQL, PostgreSQL, and SQLite — so it connects directly to existi
 
 ## Features
 
-- **Natural language to SQL** — LLM reads your schema and writes accurate queries based on your question
-- **Natural language output** — results come back as a plain one-sentence answer, not raw database tuples
-- **Multi-database support** — MySQL, PostgreSQL, SQLite all work out of the box
-- **Multiple LLM support** — switch between Groq (Llama 3.3 70B, Gemma2, Mixtral) and Google Gemini (1.5 Flash, 2.0 Flash, 1.5 Pro) from the sidebar
-- **Streamlit web interface** — browser-based UI, no terminal needed for end users
-- **SQL + raw result visible** — generated query and raw DB output available in expandable sections for transparency
+- **Natural language to SQL** -> LLM reads your schema and writes accurate queries based on your question
+- **Natural language output** -> results come back as a plain one-sentence answer, not raw database tuples
+- **Multi-database support** -> MySQL, PostgreSQL, SQLite all work out of the box
+- **Multiple LLM support** -> switch between Groq (Llama 3.3 70B, Gemma2, Mixtral) and Google Gemini (1.5 Flash, 2.0 Flash, 1.5 Pro) from the sidebar
+- **Streamlit web interface** -> browser-based UI, no terminal needed for end users
+- **SQL + raw result visible** -> generated query and raw DB output available in expandable sections for transparency
 
 ---
 
@@ -120,7 +120,7 @@ User question
         ▼
 ┌───────────────────────────────────────────┐
 │              SQL Chain                    │
-│  Prompt → Schema → LLM → Parser → SQL    │
+│  Prompt → Schema → LLM → Parser → SQL     │
 └───────────────────────┬───────────────────┘
                         │
                         ▼
@@ -129,7 +129,7 @@ User question
                         ▼
 ┌───────────────────────────────────────────┐
 │              NL Chain                     │
-│  Prompt + result → LLM → Parser          │
+│  Prompt + result → LLM → Parser           │
 └───────────────────────┬───────────────────┘
                         │
                         ▼
@@ -139,10 +139,10 @@ User question
 
 **Components:**
 
-- **SQL chain** — LangChain chain that injects the database schema into a prompt and generates a dialect-aware SQL query (MySQL backticks vs PostgreSQL double-quotes handled automatically)
-- **Database layer** — LangChain `SQLDatabase` wraps the connection; `db.run()` executes the query live
-- **NL chain** — second LLM call that takes the question + query + raw result and writes a one-sentence human-readable answer
-- **LLM layer** — supports Groq and Google Gemini, switchable without restarting the app
+- **SQL chain** —> LangChain chain that injects the database schema into a prompt and generates a dialect-aware SQL query (MySQL backticks vs PostgreSQL double-quotes handled automatically)
+- **Database layer** —> LangChain `SQLDatabase` wraps the connection; `db.run()` executes the query live
+- **NL chain** —> second LLM call that takes the question + query + raw result and writes a one-sentence human-readable answer
+- **LLM layer** —> supports Groq and Google Gemini, switchable without restarting the app
 
 ---
 
@@ -168,7 +168,7 @@ Once connected you can ask things like:
 - "Who are the top 10 customers by order value?"
 - "What is the average order value by product category?"
 
-No changes needed to the Go backend or the PostgreSQL schema — this layer sits entirely on top.
+No changes needed to the Go backend or the PostgreSQL schema - this layer sits entirely on top.
 
 ---
 
@@ -188,4 +188,3 @@ MIT License. See the LICENSE file for details.
 ---
 
 Questions or issues? Open a GitHub issue or reach out directly. Contributions welcome.
-# AskDB
