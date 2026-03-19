@@ -105,36 +105,50 @@ Then in the browser:
 ## Architecture
 
 ```
-Excel / existing DB
-        │
-        ▼
-   Pre-process
-        │
-        ▼
-   MySQL / PostgreSQL / SQLite
-        │
-        ▼ (runtime)
-──────────────────────────────────────────────
-User question
-        │
-        ▼
-┌───────────────────────────────────────────┐
-│              SQL Chain                    │
-│  Prompt → Schema → LLM → Parser → SQL     │
-└───────────────────────┬───────────────────┘
-                        │
-                        ▼
-              Database  (db.run)
-                        │
-                        ▼
-┌───────────────────────────────────────────┐
-│              NL Chain                     │
-│  Prompt + result → LLM → Parser           │
-└───────────────────────┬───────────────────┘
-                        │
-                        ▼
-            Plain English answer
-──────────────────────────────────────────────
+                 ┌──────────────────────┐
+                 │   Excel / Existing   │
+                 │        Database      │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │    Pre-processing    │
+                 │ (clean, transform)   │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+        ┌─────────────────────────────────────┐
+        │   MySQL / PostgreSQL / SQLite DB    │
+        └──────────┬──────────────────────────┘
+                   │
+                   ▼ (runtime query flow)
+═══════════════════════════════════════════════════════
+
+ User Question (Natural Language)
+                   │
+                   ▼
+        ┌─────────────────────────────────────┐
+        │            SQL Chain                │
+        │  Prompt → Schema → LLM → SQL Parse  │
+        └──────────┬──────────────────────────┘
+                   │
+                   ▼
+        ┌─────────────────────────────────────┐
+        │        Database Execution           │
+        │             (db.run)                │
+        └──────────┬──────────────────────────┘
+                   │
+                   ▼
+        ┌─────────────────────────────────────┐
+        │        NL Response Chain            │
+        │  Result → LLM → Response Parsing    │
+        └──────────┬──────────────────────────┘
+                   │
+                   ▼
+
+ Final Output: Plain English Answer
+═══════════════════════════════════════════════════════                      ▼
+
 ```
 
 **Components:**
