@@ -24,9 +24,9 @@ It started as a MySQL project but I extended it to support PostgreSQL and SQLite
 
 In most companies, data lives in SQL databases but most of the team can't query it directly. You end up with a bottleneck where a handful of people handle all the data requests. This chatbot removes that bottleneck.
 
-Type something like _"What are the total orders placed this week?"_ and it handles everything — figures out the right SQL query for your schema, runs it, and gives you a plain English answer. No SQL knowledge needed.
+Type something like _"What are the total orders placed this week?"_ and it handles everything - figures out the right SQL query for your schema, runs it, and gives you a plain English answer. No SQL knowledge needed.
 
-Works across MySQL, PostgreSQL, and SQLite — so it connects directly to existing backends without any schema changes.
+Works across MySQL, PostgreSQL, and SQLite - so it connects directly to existing backends without any schema changes.
 
 ---
 
@@ -47,7 +47,7 @@ Works across MySQL, PostgreSQL, and SQLite — so it connects directly to existi
 | ---------- | -------- | ------------ |
 | MySQL      | pymysql  | 3306         |
 | PostgreSQL | psycopg2 | 5432         |
-| SQLite     | built-in | —            |
+| SQLite     | built-in | -            |
 
 ---
 
