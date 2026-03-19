@@ -139,10 +139,10 @@ User question
 
 **Components:**
 
-- **SQL chain** —> LangChain chain that injects the database schema into a prompt and generates a dialect-aware SQL query (MySQL backticks vs PostgreSQL double-quotes handled automatically)
-- **Database layer** —> LangChain `SQLDatabase` wraps the connection; `db.run()` executes the query live
-- **NL chain** —> second LLM call that takes the question + query + raw result and writes a one-sentence human-readable answer
-- **LLM layer** —> supports Groq and Google Gemini, switchable without restarting the app
+- **SQL chain** -> LangChain chain that injects the database schema into a prompt and generates a dialect-aware SQL query (MySQL backticks vs PostgreSQL double-quotes handled automatically)
+- **Database layer** -> LangChain `SQLDatabase` wraps the connection; `db.run()` executes the query live
+- **NL chain** -> second LLM call that takes the question + query + raw result and writes a one-sentence human-readable answer
+- **LLM layer** -> supports Groq and Google Gemini, switchable without restarting the app
 
 ---
 
@@ -174,10 +174,10 @@ No changes needed to the Go backend or the PostgreSQL schema - this layer sits e
 
 ## Future Work
 
-- **Conversation memory** — right now each question is independent; adding memory would let users ask follow-ups like "what about last month?"
-- **Cloud deployment** — package for Streamlit Cloud or Docker so teams can use it without local setup
-- **Query history export** — let users download a log of questions and the SQL generated
-- **More databases** — MS SQL Server, BigQuery support
+- **Conversation memory** - right now each question is independent; adding memory would let users ask follow-ups like "what about last month?"
+- **Cloud deployment** - package for Streamlit Cloud or Docker so teams can use it without local setup
+- **Query history export** - let users download a log of questions and the SQL generated
+- **More databases** - MS SQL Server, BigQuery support
 
 ---
 
