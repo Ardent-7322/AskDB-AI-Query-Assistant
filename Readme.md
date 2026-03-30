@@ -1,4 +1,4 @@
-# AskDB — AI Query Assistant
+# AskDB - AI Query Assistant
 
 I built this because I wanted a faster way to query databases without writing SQL every time. Type a question in plain English, get an answer straight from the database. AskDB does the exact work.
 
