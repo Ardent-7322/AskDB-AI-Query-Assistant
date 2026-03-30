@@ -1,0 +1,131 @@
+import re
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+
+def clean_query(raw: str) -> str:
+    match = re.search(r"```sql\s*(.*?)\s*```", raw, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else raw.strip().rstrip(";")
+
+
+def confidence_badge(result_text: str) -> tuple:
+    if result_text.startswith("Query error"):
+        return "red", "Low confidence — query failed"
+    elif result_text == "(no rows returned)":
+        return "orange", "Medium confidence — no rows returned"
+    return "green", "High confidence — query executed successfully"
+
+
+def format_history(messages: list) -> str:
+    """
+    Convert session messages into a readable conversation history string.
+    Only includes user questions and assistant NL answers (not raw SQL/results).
+    """
+    history_lines = []
+    for msg in messages:
+        if msg["role"] == "user":
+            history_lines.append(f"User: {msg['content']}")
+        elif msg["role"] == "assistant" and msg.get("nl_answer"):
+            history_lines.append(f"Assistant: {msg['nl_answer']}")
+    return "\n".join(history_lines) if history_lines else "No previous conversation."
+
+
+def build_sql_chain(db, llm, db_type):
+    dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
+    quote_char = '"' if db_type == "PostgreSQL" else "`"
+
+    # Memory-aware SQL prompt 
+    prompt = ChatPromptTemplate.from_template(f"""
+You are an expert {dialect} query generator.
+
+CONVERSATION HISTORY (for context only):
+{{history}}
+
+STRICT RULES:
+- Output ONLY the raw SQL query
+- No markdown, no backtick fences, no explanation
+- Single line query only, no line breaks
+- Use exact table and column names from the schema
+- Use JOINs where needed based on foreign key relationships
+- Never hallucinate columns that don't exist in the schema
+- Use LIMIT 100 only when the question could return a large result set. 
+For simple lookups or filtered queries, omit LIMIT.
+- Wrap column names that have spaces with {quote_char}
+
+HISTORY USAGE RULES (very important):
+- Use conversation history ONLY if the current question is clearly a follow-up
+- Follow-up signals: words like "his", "her", "their", "those", "these", "same", "also", "what about", "and", "too", "as well", "that", "it"
+- If the current question is completely independent and self-contained → IGNORE history entirely and treat it as a fresh question
+- When in doubt → IGNORE history
+
+DATABASE SCHEMA: {{schema}}
+CURRENT QUESTION: {{question}}
+SQL QUERY:""")
+
+    return (
+        RunnablePassthrough.assign(schema=lambda _: db.get_table_info())
+        | prompt
+        | llm.bind(stop=["\nSQLResult:"])
+        | StrOutputParser()
+    )
+
+
+def build_retry_sql_chain(db, llm, db_type):
+    """
+    Used when first SQL attempt fails.
+    Takes original question + failed query + error and returns a fixed query.
+    """
+    dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
+    quote_char = '"' if db_type == "PostgreSQL" else "`"
+
+    prompt = ChatPromptTemplate.from_template(f"""
+You are an expert {dialect} query debugger.
+
+The following SQL query failed with an error. Fix it and return ONLY the corrected SQL query.
+
+STRICT RULES:
+- Output ONLY the raw SQL query
+- No markdown, no backtick fences, no explanation
+- Single line query only
+- Use exact table and column names from the schema
+- Wrap column names that have spaces with {quote_char}
+
+DATABASE SCHEMA: {{schema}}
+ORIGINAL QUESTION: {{question}}
+FAILED SQL QUERY: {{failed_query}}
+ERROR MESSAGE: {{error}}
+FIXED SQL QUERY:""")
+
+    return (
+        RunnablePassthrough.assign(schema=lambda _: db.get_table_info())
+        | prompt
+        | llm.bind(stop=["\nSQLResult:"])
+        | StrOutputParser()
+    )
+
+
+def build_nl_chain(llm):
+    # Memory-aware NL prompt 
+    prompt = ChatPromptTemplate.from_template("""
+You are a helpful data analyst. Given the current user question, SQL query, and result,
+write a single clear sentence answer. No extra explanation beyond one sentence.
+
+CONVERSATION HISTORY (use only if question is a follow-up, otherwise ignore):
+{history}
+
+Current User Question: {question}
+SQL Query: {query}
+Database Result: {result}
+
+One sentence answer:""")
+
+    return prompt | llm | StrOutputParser()
+
+
+def build_chains(db, llm, db_type):
+    return (
+        build_sql_chain(db, llm, db_type),
+        build_retry_sql_chain(db, llm, db_type),
+        build_nl_chain(llm)
+    )
