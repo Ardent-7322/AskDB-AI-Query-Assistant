@@ -18,15 +18,18 @@ def confidence_badge(result_text: str) -> tuple:
 
 
 def format_history(messages: list) -> str:
-    # Sirf last 4 messages (2 exchanges)
-    recent = messages[-4:] if len(messages) > 4 else messages
+    """
+    Convert session messages into a readable conversation history string.
+    Only includes user questions and assistant NL answers (not raw SQL/results).
+    """
     history_lines = []
-    for msg in recent:
+    for msg in messages:
         if msg["role"] == "user":
             history_lines.append(f"User: {msg['content']}")
         elif msg["role"] == "assistant" and msg.get("nl_answer"):
             history_lines.append(f"Assistant: {msg['nl_answer']}")
     return "\n".join(history_lines) if history_lines else "No previous conversation."
+
 
 def build_sql_chain(db, llm, db_type):
     dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
@@ -36,7 +39,7 @@ def build_sql_chain(db, llm, db_type):
     prompt = ChatPromptTemplate.from_template(f"""
 You are an expert {dialect} query generator.
 
-CONVERSATION HISTORY (use this to resolve follow-up questions like "what about last month?" or "show me those users"):
+CONVERSATION HISTORY (for context only):
 {{history}}
 
 STRICT RULES:
@@ -48,7 +51,12 @@ STRICT RULES:
 - Never hallucinate columns that don't exist in the schema
 - Use LIMIT 100 unless the question asks for aggregates or all records
 - Wrap column names that have spaces with {quote_char}
-- If the current question references something from history (e.g. "those products", "last result"), resolve it using the history above
+
+HISTORY USAGE RULES (very important):
+- Use conversation history ONLY if the current question is clearly a follow-up
+- Follow-up signals: words like "his", "her", "their", "those", "these", "same", "also", "what about", "and", "too", "as well", "that", "it"
+- If the current question is completely independent and self-contained → IGNORE history entirely and treat it as a fresh question
+- When in doubt → IGNORE history
 
 DATABASE SCHEMA: {{schema}}
 CURRENT QUESTION: {{question}}
@@ -97,14 +105,12 @@ FIXED SQL QUERY:""")
 
 
 def build_nl_chain(llm):
-    # ── Memory-aware NL prompt ─────
+    # ── Memory-aware NL prompt ────────────────────────────────────────────────
     prompt = ChatPromptTemplate.from_template("""
-You are a helpful data analyst. Given the conversation history, the current user question,
-SQL query, and result, write a single clear sentence answer.
-If the result references something from a previous question, mention that context briefly.
-No extra explanation beyond one sentence.
+You are a helpful data analyst. Given the current user question, SQL query, and result,
+write a single clear sentence answer. No extra explanation beyond one sentence.
 
-CONVERSATION HISTORY:
+CONVERSATION HISTORY (use only if question is a follow-up, otherwise ignore):
 {history}
 
 Current User Question: {question}
