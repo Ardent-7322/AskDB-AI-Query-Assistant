@@ -1,45 +1,27 @@
-# AskDB Chatbot - (AI query assistant)
+# AskDB — AI Query Assistant
 
-I built this project to solve a problem I kept seeing - people on the team had questions about the data but had to wait for someone technical to pull a report. This chatbot removes that bottleneck entirely. Type a question in plain English, get an answer straight from the database.
+I built this because I wanted a faster way to query databases without writing SQL every time. Type a question in plain English, get an answer straight from the database. AskDB does the exact work.
 
-It started as a MySQL project but I extended it to support PostgreSQL and SQLite too, which makes it easy to plug into any existing backend - including my own [Go Ecommerce](https://github.com/yourusername/go-ecommerce) project that runs on PostgreSQL.
+Started as a MySQL project, then extended it to PostgreSQL and SQLite so it can plug into any existing backend - including my own [Go Ecommerce](https://github.com/yourusername/go-ecommerce) project running on PostgreSQL and CricMB which is deployed on Render.
 
----
+## What it does
 
-## Table of Contents
+Type something like _ "Who are the top 10 customers by order value?"_ and AskDB figures out the right SQL for your schema, runs it, and gives you a plain English answer. No SQL knowledge needed.
 
-- [Project Overview](#project-overview)
-- [Features](#features)
-- [Supported Databases](#supported-databases)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Architecture](#architecture)
-- [Connecting to Go Ecommerce Backend](#connecting-to-go-ecommerce-backend)
-- [Future Work](#future-work)
-- [License](#license)
+It also handles follow-up questions. Ask _"What is his economy rate?"_ after a previous query and it understands the context - but if you switch topics entirely, it treats the new question as fresh. No hallucinated context.
 
----
-
-## Project Overview
-
-In most companies, data lives in SQL databases but most of the team can't query it directly. You end up with a bottleneck where a handful of people handle all the data requests. This chatbot removes that bottleneck.
-
-Type something like _"What are the total orders placed this week?"_ and it handles everything - figures out the right SQL query for your schema, runs it, and gives you a plain English answer. No SQL knowledge needed.
-
-Works across MySQL, PostgreSQL, and SQLite - so it connects directly to existing backends without any schema changes.
-
----
+If the generated SQL fails, it automatically tries to fix and re-run it before showing an error.
 
 ## Features
 
-- **Natural language to SQL** -> LLM reads your schema and writes accurate queries based on your question
-- **Natural language output** -> results come back as a plain one-sentence answer, not raw database tuples
-- **Multi-database support** -> MySQL, PostgreSQL, SQLite all work out of the box
-- **Multiple LLM support** -> switch between Groq (Llama 3.3 70B, Gemma2, Mixtral) and Google Gemini (1.5 Flash, 2.0 Flash, 1.5 Pro) from the sidebar
-- **Streamlit web interface** -> browser-based UI, no terminal needed for end users
-- **SQL + raw result visible** -> generated query and raw DB output available in expandable sections for transparency
-
----
+- **Natural language → SQL → answer** - full pipeline, one question at a time
+- **Conversation memory** - resolves follow-ups like "what about last month?" or "show me his stats" without repeating yourself
+- **Smart history** - uses context only when the question is clearly a follow-up, ignores it otherwise
+- **Auto-retry on SQL errors** - if the first query fails, the LLM debugs and retries automatically
+- **Multi-database** - MySQL, PostgreSQL, SQLite out of the box
+- **Multiple LLM providers** - Groq (Llama 3.3 70B, Llama 3.1 8B, Mixtral) and Google Gemini (1.5 Flash, 2.0 Flash, 1.5 Pro)
+- **API key security** - keys load from `.env` automatically, no need to paste them in the UI every time
+- **Transparent output** - generated SQL and raw DB result always available in expandable sections
 
 ## Supported Databases
 
@@ -49,22 +31,20 @@ Works across MySQL, PostgreSQL, and SQLite - so it connects directly to existing
 | PostgreSQL | psycopg2 | 5432         |
 | SQLite     | built-in | -            |
 
----
-
 ## Installation
 
-**1. Clone the repository**
+**1. Clone the repo**
 
 ```bash
-git clone https://github.com/yourusername/text-to-sql-chatbot.git
-cd text-to-sql-chatbot
+git clone https://github.com/yourusername/askdb.git
+cd askdb
 ```
 
-**2. Set up a virtual environment**
+**2. Create a virtual environment**
 
 ```bash
-conda create -n text2sql python=3.10 -y
-conda activate text2sql
+conda create -n askdb python=3.10 -y
+conda activate askdb
 ```
 
 **3. Install dependencies**
@@ -73,18 +53,16 @@ conda activate text2sql
 pip install streamlit langchain langchain-community langchain-core langchain-groq langchain-google-genai pymysql psycopg2-binary python-dotenv pandas
 ```
 
-**4. Set up your API keys**
+**4. Set up API keys**
 
-Create a `.env` file in the project root:
+Create a `.env` file in the root:
 
 ```
 GROQ_API_KEY=your_groq_api_key_here
 GOOGLE_API_KEY=your_google_api_key_here
 ```
 
-Get a free Groq API key at [console.groq.com](https://console.groq.com).
-
----
+Get a free Groq key at [console.groq.com](https://console.groq.com) - no credit card needed.
 
 ## Usage
 
@@ -94,77 +72,60 @@ python -m streamlit run app.py
 
 Then in the browser:
 
-1. Select your database type (MySQL / PostgreSQL / SQLite) in the sidebar
-2. Fill in connection credentials and click **Connect**
-3. Choose your LLM provider and model, paste your API key, click **Load LLM**
-4. Type your question in the chat box and hit Enter
-5. You get a plain English answer with the SQL query and raw result available below
+1. Pick your database type in the sidebar and fill in connection details
+2. Click **Connect**
+3. Choose your LLM provider and model - if the key is in `.env` it loads automatically
+4. Click **Load LLM**
+5. Ask anything in plain English
 
----
+The answer comes back as a single sentence. The SQL query and raw result are available below it if you want to verify.
+
+> **Note:** AskDB connects to whatever database you point it at - local or remote. For remote access, make sure your DB is reachable from your machine (cloud-hosted DBs like RDS, Supabase, or Railway work out of the box).
 
 ## Architecture
 
 ```
-                 ┌──────────────────────┐
-                 │   Excel / Existing   │
-                 │        Database      │
-                 └──────────┬───────────┘
-                            │
-                            ▼
-                 ┌──────────────────────┐
-                 │    Pre-processing    │
-                 │ (clean, transform)   │
-                 └──────────┬───────────┘
-                            │
-                            ▼
-        ┌─────────────────────────────────────┐
-        │   MySQL / PostgreSQL / SQLite DB    │
-        └──────────┬──────────────────────────┘
-                   │
-                   ▼ (runtime query flow)
-═══════════════════════════════════════════════════════
-
- User Question (Natural Language)
+User question
+      │
+      ▼
+┌─────────────────────────────────────────┐
+│              SQL Chain                  │
+│  Schema + History + Question → SQL      │
+└──────────────────┬──────────────────────┘
                    │
                    ▼
-        ┌─────────────────────────────────────┐
-        │            SQL Chain                │
-        │  Prompt → Schema → LLM → SQL Parse  │
-        └──────────┬──────────────────────────┘
+         Database  (db.run)
+                   │
+            ┌──────┴──────┐
+          success        error
+                   │         │
+                   │    Retry Chain
+                   │    (fix + re-run)
+                   │         │
+                   └──────┬──┘
+                          ▼
+┌─────────────────────────────────────────┐
+│              NL Chain                   │
+│  Question + Query + Result → Answer     │
+└──────────────────┬──────────────────────┘
                    │
                    ▼
-        ┌─────────────────────────────────────┐
-        │        Database Execution           │
-        │             (db.run)                │
-        └──────────┬──────────────────────────┘
-                   │
-                   ▼
-        ┌─────────────────────────────────────┐
-        │        NL Response Chain            │
-        │  Result → LLM → Response Parsing    │
-        └──────────┬──────────────────────────┘
-                   │
-                   ▼
-
- Final Output: Plain English Answer
-═══════════════════════════════════════════════════════                      ▼
-
+        Plain English answer
 ```
 
 **Components:**
 
-- **SQL chain** -> LangChain chain that injects the database schema into a prompt and generates a dialect-aware SQL query (MySQL backticks vs PostgreSQL double-quotes handled automatically)
-- **Database layer** -> LangChain `SQLDatabase` wraps the connection; `db.run()` executes the query live
-- **NL chain** -> second LLM call that takes the question + query + raw result and writes a one-sentence human-readable answer
-- **LLM layer** -> supports Groq and Google Gemini, switchable without restarting the app
-
----
+- **SQL chain** - injects the DB schema and conversation history into a prompt, generates a dialect-aware SQL query (handles MySQL backticks vs PostgreSQL double-quotes automatically)
+- **Retry chain** - if execution fails, takes the broken query + error message and asks the LLM to fix it
+- **Database layer** - LangChain `SQLDatabase` wraps the connection; `db.run()` executes live
+- **NL chain** - second LLM call that turns the raw result into a one-sentence human-readable answer
+- **Memory layer** - conversation history passed into both chains; LLM decides whether to use it based on whether the question is a follow-up
 
 ## Connecting to Go Ecommerce Backend
 
-This project connects directly to the PostgreSQL database used by the [Go Ecommerce backend](https://github.com/yourusername/go-ecommerce).
+AskDB connects directly to the PostgreSQL database used by the [Go Ecommerce backend](https://github.com/yourusername/go-ecommerce).
 
-In the sidebar, select **PostgreSQL** and use the same credentials from your Go project's `.env`:
+Select **PostgreSQL** in the sidebar and use your Go project's DB credentials:
 
 ```
 Host:     localhost
@@ -174,7 +135,7 @@ Password: your_db_password
 Database: ecom_db
 ```
 
-Once connected you can ask things like:
+Once connected, you can ask things like:
 
 - "What are the total orders placed today?"
 - "Which products have the lowest inventory?"
@@ -182,23 +143,19 @@ Once connected you can ask things like:
 - "Who are the top 10 customers by order value?"
 - "What is the average order value by product category?"
 
-No changes needed to the Go backend or the PostgreSQL schema - this layer sits entirely on top.
+No changes needed to the Go backend or the schema - AskDB sits entirely on top.
 
----
+## Evaluation
 
-## Future Work
+AskDB includes a built-in evaluation pipeline powered by RAGAS. It automatically generates test questions from your database schema, runs them through the SQL chain, and scores the results - no manual test cases needed.
 
-- **Conversation memory** - right now each question is independent; adding memory would let users ask follow-ups like "what about last month?"
-- **Cloud deployment** - package for Streamlit Cloud or Docker so teams can use it without local setup
-- **Query history export** - let users download a log of questions and the SQL generated
-- **More databases** - MS SQL Server, BigQuery support
+Tested across multiple real databases including [CricmB](https://cricmb.onrender.com/) - a ball-by-ball IPL statistics database - and a PostgreSQL ecommerce backend, it consistently hits:
 
----
+- **SQL correctness** - 1.0 on simple to moderate queries
+- **Helpfulness** - 3.4 to 4.5 out of 5 depending on schema complexity
+
+The evaluator also runs per-query error analysis and surfaces recurring patterns - so you know exactly what to fix in the prompt rather than guessing.
 
 ## License
 
-MIT License. See the LICENSE file for details.
-
----
-
-Questions or issues? Open a GitHub issue or reach out directly. Contributions welcome.
+MIT - do whatever you want with it.
