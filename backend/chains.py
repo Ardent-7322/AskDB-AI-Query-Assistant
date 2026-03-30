@@ -35,7 +35,7 @@ def build_sql_chain(db, llm, db_type):
     dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
     quote_char = '"' if db_type == "PostgreSQL" else "`"
 
-    # ── Memory-aware SQL prompt ───────────────────────────────────────────────
+    # Memory-aware SQL prompt 
     prompt = ChatPromptTemplate.from_template(f"""
 You are an expert {dialect} query generator.
 
@@ -49,7 +49,8 @@ STRICT RULES:
 - Use exact table and column names from the schema
 - Use JOINs where needed based on foreign key relationships
 - Never hallucinate columns that don't exist in the schema
-- Use LIMIT 100 unless the question asks for aggregates or all records
+- Use LIMIT 100 only when the question could return a large result set. 
+For simple lookups or filtered queries, omit LIMIT.
 - Wrap column names that have spaces with {quote_char}
 
 HISTORY USAGE RULES (very important):
@@ -105,7 +106,7 @@ FIXED SQL QUERY:""")
 
 
 def build_nl_chain(llm):
-    # ── Memory-aware NL prompt ────────────────────────────────────────────────
+    # Memory-aware NL prompt 
     prompt = ChatPromptTemplate.from_template("""
 You are a helpful data analyst. Given the current user question, SQL query, and result,
 write a single clear sentence answer. No extra explanation beyond one sentence.

@@ -15,7 +15,7 @@ def load_css(path):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 load_css("style.css")
 
-# ── Session state init ────────────────────────────────────────
+# Session state init for messages, db connection, chains, etc.
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "db" not in st.session_state:
@@ -31,7 +31,7 @@ if "llm_name" not in st.session_state:
 if "db_type" not in st.session_state:
     st.session_state.db_type = "MySQL"
 
-# ── Sidebar ───────────────────────────────────────────────────
+# Sidebar for DB connection and LLM configuration
 with st.sidebar:
     st.header("🗄️ Database")
     db_type = st.selectbox("Type", ["MySQL", "PostgreSQL", "SQLite"])
@@ -113,7 +113,7 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# ── Main ──────────────────────────────────────────────────────
+# Main interface for chat and displaying messages
 st.markdown("""
 <div class="askdb-header">
     <div class="askdb-logo">🗄️</div>
