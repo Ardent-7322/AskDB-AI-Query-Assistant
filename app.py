@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import pandas as pd
 from dotenv import load_dotenv
 from backend.database import connect
 from backend.llm import get_llm
@@ -7,7 +8,7 @@ from backend.chains import build_chains, clean_query, confidence_badge, format_h
 
 load_dotenv()
 
-st.set_page_config(page_title="AskDB", layout="wide", page_icon="🗄️")
+st.set_page_config(page_title="AskDB", layout="wide", page_icon="assets/favicon.ico")
 
 # Load CSS
 def load_css(path):
@@ -15,7 +16,7 @@ def load_css(path):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 load_css("style.css")
 
-# Session state init for messages, db connection, chains, etc.
+# ── Session state init ─────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "db" not in st.session_state:
@@ -30,65 +31,74 @@ if "llm_name" not in st.session_state:
     st.session_state.llm_name = None
 if "db_type" not in st.session_state:
     st.session_state.db_type = "MySQL"
+if "connected_db_name" not in st.session_state:
+    st.session_state.connected_db_name = None
 
-# Sidebar for DB connection and LLM configuration
+# ── Sidebar ───────────────────────────────────────────────────
 with st.sidebar:
-    st.header("🗄️ Database")
-    db_type = st.selectbox("Type", ["MySQL", "PostgreSQL", "SQLite"])
+    st.markdown("**DATABASE**")
+
+    db_type = st.selectbox("Type", ["MySQL", "PostgreSQL", "SQLite"], label_visibility="collapsed")
     st.session_state.db_type = db_type
 
     if db_type == "SQLite":
-        database = st.text_input("File path", value="mydb.sqlite3")
+        database = st.text_input("File path", value="mydb.sqlite3", placeholder="path/to/file.sqlite3")
         host = port = user = password = ""
     else:
-        host     = st.text_input("Host", value="localhost")
+        host     = st.text_input("Host", value="localhost", placeholder="localhost")
         port     = st.text_input("Port", value="5432" if db_type == "PostgreSQL" else "3306")
         user     = st.text_input("Username", value="postgres" if db_type == "PostgreSQL" else "root")
-        password = st.text_input("Password", type="password")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
         database = st.text_input("Database", value="ecom_db" if db_type == "PostgreSQL" else "text_to_sql")
 
     if st.button("Connect", use_container_width=True):
         try:
             st.session_state.db = connect(db_type, user, password, host, port, database)
-            st.success(f"✅ {db_type} connected")
+            st.session_state.connected_db_name = database
             st.session_state.sql_chain = st.session_state.nl_chain = st.session_state.retry_chain = None
+            st.rerun()
         except Exception as e:
             st.error(str(e))
 
+    if st.session_state.connected_db_name:
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:6px;background:#0d1f12;border:1px solid #1a3a22;'
+            f'border-radius:20px;padding:4px 10px;margin-top:4px;">'
+            f'<div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0"></div>'
+            f'<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#4ade80">'
+            f'Connected · {st.session_state.connected_db_name}</span></div>',
+            unsafe_allow_html=True
+        )
+
     st.divider()
-    st.header("🤖 LLM")
-    provider = st.selectbox("Provider", ["Groq", "Google Gemini", "Anthropic Claude"])
+    st.markdown("**LLM**")
+
+    provider = st.selectbox("Provider", ["Groq", "Google Gemini", "Anthropic Claude"], label_visibility="collapsed")
 
     if provider == "Groq":
-        model = st.selectbox("Model", ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"])
+        model   = st.selectbox("Model", ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"], label_visibility="collapsed")
         env_key = os.getenv("GROQ_API_KEY", "")
+        api_key = env_key if env_key else st.text_input("Groq API Key", type="password", placeholder="gsk_...")
         if env_key:
-            st.success("✅ Groq API key loaded from .env")
-            api_key = env_key
-        else:
-            api_key = st.text_input("Groq API Key", type="password", help="Or set GROQ_API_KEY in your .env file")
+            st.markdown('<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#374151">API key from .env</span>', unsafe_allow_html=True)
 
     elif provider == "Google Gemini":
-        model = st.selectbox("Model", ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"])
+        model   = st.selectbox("Model", ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"], label_visibility="collapsed")
         env_key = os.getenv("GOOGLE_API_KEY", "")
+        api_key = env_key if env_key else st.text_input("Google API Key", type="password", placeholder="AIza...")
         if env_key:
-            st.success("✅ Google API key loaded from .env")
-            api_key = env_key
-        else:
-            api_key = st.text_input("Google API Key", type="password", help="Or set GOOGLE_API_KEY in your .env file")
+            st.markdown('<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#374151">API key from .env</span>', unsafe_allow_html=True)
 
     elif provider == "Anthropic Claude":
-        model = st.selectbox("Model", ["claude-sonnet-4-5", "claude-opus-4-5", "claude-haiku-4-5-20251001"])
+        model   = st.selectbox("Model", ["claude-sonnet-4-5", "claude-opus-4-5", "claude-haiku-4-5-20251001"], label_visibility="collapsed")
         env_key = os.getenv("ANTHROPIC_API_KEY", "")
+        api_key = env_key if env_key else st.text_input("Anthropic API Key", type="password", placeholder="sk-ant-...")
         if env_key:
-            st.success("✅ Anthropic API key loaded from .env")
-            api_key = env_key
-        else:
-            api_key = st.text_input("Anthropic API Key", type="password", help="Or set ANTHROPIC_API_KEY in your .env file")
+            st.markdown('<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#374151">API key from .env</span>', unsafe_allow_html=True)
 
     if st.button("Load LLM", use_container_width=True):
         if not api_key:
-            st.error("API key missing. Add it in sidebar or set it in your .env file.")
+            st.error("API key missing.")
         else:
             try:
                 llm = get_llm(provider, model, api_key)
@@ -98,50 +108,130 @@ with st.sidebar:
                     st.session_state.sql_chain   = sql_chain
                     st.session_state.retry_chain = retry_chain
                     st.session_state.nl_chain    = nl_chain
-                    st.session_state.llm_name    = f"{provider} / {model}"
-                    st.success("✅ LLM loaded")
+                    st.session_state.llm_name    = f"{provider} · {model}"
+                    st.rerun()
                 else:
-                    st.warning("Connect to database first.")
+                    st.warning("Connect to a database first.")
             except Exception as e:
                 st.error(str(e))
 
     if st.session_state.llm_name:
-        st.caption(f"Active: {st.session_state.llm_name}")
+        st.markdown(
+            f'<span style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#374151">'
+            f'{st.session_state.llm_name}</span>',
+            unsafe_allow_html=True
+        )
 
     st.divider()
-    if st.button("🗑️ Clear Chat", use_container_width=True):
+    if st.button("Clear chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# Main interface for chat and displaying messages
+
+# ── Header ────────────────────────────────────────────────────
 st.markdown("""
 <div class="askdb-header">
-    <div class="askdb-logo">🗄️</div>
+    <div class="askdb-logo-box">
+        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 5h14v2H3zm0 4h14v2H3zm0 4h9v2H3z"/>
+        </svg>
+    </div>
     <div>
         <div class="askdb-title">Ask<span>DB</span></div>
-        <div class="askdb-subtitle">Ask questions in plain English and get results from your database.</div>
+        <div class="askdb-subtitle">Natural language to SQL — any database, any question.</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
+
+# ── Helper: parse result into dataframe ───────────────────────
+def parse_result_to_df(raw_result, query):
+    """Try to turn raw DB result into a clean DataFrame."""
+    try:
+        if not raw_result or raw_result == "(no rows returned)":
+            return None, 0
+        # langchain db.run() returns a string like "[('val1', 'val2'), ...]"
+        import ast
+        parsed = ast.literal_eval(raw_result)
+        if not parsed:
+            return None, 0
+        # extract column names from SELECT query
+        import re
+        select_match = re.search(r'SELECT\s+(.*?)\s+FROM', query, re.IGNORECASE | re.DOTALL)
+        if select_match:
+            cols_raw = select_match.group(1)
+            # handle aliases like COUNT(*) AS total
+            cols = [c.strip().split(' ')[-1].replace('"','').replace('`','')
+                    for c in cols_raw.split(',')]
+        else:
+            cols = [f"col_{i+1}" for i in range(len(parsed[0]))]
+
+        if len(cols) != len(parsed[0]):
+            cols = [f"col_{i+1}" for i in range(len(parsed[0]))]
+
+        df = pd.DataFrame(parsed, columns=cols)
+        return df, len(df)
+    except Exception:
+        return None, 0
+
+
+# ── Helper: confidence pill HTML ──────────────────────────────
+def render_confidence(confidence_tuple):
+    if not confidence_tuple:
+        return ""
+    color, label = confidence_tuple
+    if color == "red":
+        return (
+            '<div class="conf-pill conf-pill-low">'
+            '<div class="conf-dot conf-dot-low"></div>'
+            f'{label}</div>'
+        )
+    return (
+        '<div class="conf-pill">'
+        '<div class="conf-dot"></div>'
+        f'{label}</div>'
+    )
+
+
+# ── Render chat history ───────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-        if msg.get("nl_answer"):
-            st.write(msg["nl_answer"])
-        if msg.get("retried"):
-            st.info("⚠️ First query failed — auto-corrected and retried.")
-        if msg.get("confidence"):
-            color, label = msg["confidence"]
-            st.markdown(f":{color}[{label}]")
-        if msg.get("sql"):
-            with st.expander("View SQL"):
-                st.code(msg["sql"], language="sql")
-        if msg.get("raw_result"):
-            with st.expander("View Raw Result"):
-                st.write(msg["raw_result"])
+        if msg["role"] == "user":
+            st.write(msg["content"])
+        else:
+            if msg.get("nl_answer"):
+                st.write(msg["nl_answer"])
 
-user_input = st.chat_input("Ask a question about your database...")
+            if msg.get("retried"):
+                st.markdown(
+                    '<div style="font-family:IBM Plex Mono,monospace;font-size:11px;color:#f59e0b;'
+                    'margin:4px 0">Auto-corrected query — retried successfully.</div>',
+                    unsafe_allow_html=True
+                )
+
+            if msg.get("confidence"):
+                st.markdown(render_confidence(msg["confidence"]), unsafe_allow_html=True)
+
+            if msg.get("sql"):
+                with st.expander("SQL"):
+                    st.code(msg["sql"], language="sql")
+
+            if msg.get("raw_result"):
+                df, row_count = parse_result_to_df(msg["raw_result"], msg.get("sql", ""))
+                label = f"Results · {row_count} row{'s' if row_count != 1 else ''}" if row_count else "Results"
+                with st.expander(label):
+                    if df is not None:
+                        st.dataframe(df, use_container_width=True, hide_index=True)
+                    else:
+                        st.markdown(
+                            f'<span style="font-family:IBM Plex Mono,monospace;font-size:12px;color:#4b5563">'
+                            f'{msg["raw_result"]}</span>',
+                            unsafe_allow_html=True
+                        )
+
+
+# ── Chat input ────────────────────────────────────────────────
+user_input = st.chat_input("Ask anything about your database...")
 
 if user_input:
     if not st.session_state.sql_chain or not st.session_state.db:
@@ -150,11 +240,14 @@ if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
         history_str = format_history(st.session_state.messages[:-1])
 
-        with st.spinner("Thinking..."):
+        with st.spinner(""):
             try:
+                from backend.chains import extract_last_entity
+                last_entity = extract_last_entity(st.session_state.messages[:-1])
                 query = clean_query(st.session_state.sql_chain.invoke({
-                    "question": user_input,
-                    "history":  history_str
+                    "question":    user_input,
+                    "history":     history_str,
+                    "last_entity": last_entity
                 }))
 
                 retried = False
@@ -198,7 +291,7 @@ if user_input:
                     "role":       "assistant",
                     "content":    "",
                     "nl_answer":  f"Something went wrong: {e}",
-                    "confidence": ("red", "Low confidence — query failed")
+                    "confidence": ("red", "Query failed")
                 })
 
         st.rerun()
