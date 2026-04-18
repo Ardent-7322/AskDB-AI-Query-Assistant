@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap');
 
 /* ── Hide Streamlit chrome ── */
 #MainMenu, footer { visibility: hidden; }
@@ -7,7 +7,7 @@
 
 /* ── Global ── */
 html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     background-color: #0c0e12 !important;
     color: #c9d1d9 !important;
 }
@@ -26,7 +26,7 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
 [data-testid="stSidebar"] .stMarkdown p {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 11px !important;
     font-weight: 500 !important;
     color: #4b5563 !important;
@@ -34,7 +34,6 @@ html, body, [class*="css"] {
     letter-spacing: 0.07em !important;
 }
 
-/* Sidebar inputs */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] textarea,
 [data-testid="stSidebar"] [data-baseweb="select"] {
@@ -51,13 +50,12 @@ html, body, [class*="css"] {
     box-shadow: none !important;
 }
 
-/* Sidebar buttons */
 [data-testid="stSidebar"] .stButton button {
     background-color: #161b27 !important;
     border: 1px solid #1c2030 !important;
     border-radius: 6px !important;
     color: #94a3b8 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 12px !important;
     font-weight: 500 !important;
     transition: border-color 0.15s, color 0.15s !important;
@@ -69,7 +67,6 @@ html, body, [class*="css"] {
     background-color: #1e2535 !important;
 }
 
-/* Connect button — primary */
 [data-testid="stSidebar"] .stButton:first-of-type button {
     background-color: #1e3a5f !important;
     border-color: #2563eb33 !important;
@@ -81,12 +78,10 @@ html, body, [class*="css"] {
     color: #fff !important;
 }
 
-/* Sidebar success/warning/error — strip green boxes */
 [data-testid="stSidebar"] [data-testid="stAlert"] {
     background-color: #0f1117 !important;
     border: 1px solid #1c2030 !important;
     border-radius: 6px !important;
-    font-family: 'IBM Plex Mono', monospace !important;
     font-size: 11px !important;
     padding: 6px 10px !important;
 }
@@ -103,47 +98,29 @@ html, body, [class*="css"] {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 20px 0 16px 0;
+    padding: 22px 0 18px 0;
     border-bottom: 1px solid #1c2030;
     margin-bottom: 20px;
 }
 
-.askdb-logo-box {
-    width: 36px;
-    height: 36px;
-    background: #161b27;
-    border: 1px solid #1c2030;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.askdb-logo-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(59,130,246,0.35));
 }
 
-.askdb-logo-box svg {
-    width: 18px;
-    height: 18px;
-    fill: #64748b;
-}
-
-.askdb-title {
+.askdb-wordmark {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 22px;
     font-weight: 500;
-    letter-spacing: -0.01em;
-    color: #e2e8f0;
+    letter-spacing: -0.3px;
     line-height: 1;
+    color: #e2e8f0;
 }
 
-.askdb-title span {
+.askdb-wordmark .db {
     color: #3b82f6;
-}
-
-.askdb-subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: #374151;
-    margin-top: 4px;
-    font-weight: 400;
 }
 
 /* ── Chat messages ── */
@@ -156,7 +133,7 @@ html, body, [class*="css"] {
 }
 
 [data-testid="stChatMessage"] p {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 14px !important;
     color: #c9d1d9 !important;
     line-height: 1.6 !important;
@@ -191,11 +168,9 @@ html, body, [class*="css"] {
     flex-shrink: 0;
 }
 
-.conf-dot-low {
-    background: #f87171;
-}
+.conf-dot-low { background: #f87171; }
 
-/* ── Expanders (SQL + Results) ── */
+/* ── Expanders ── */
 [data-testid="stExpander"] {
     background-color: #080a0f !important;
     border: 1px solid #1c2030 !important;
@@ -210,13 +185,8 @@ html, body, [class*="css"] {
     padding: 8px 12px !important;
 }
 
-[data-testid="stExpander"] summary:hover {
-    color: #94a3b8 !important;
-}
-
-[data-testid="stExpander"] summary svg {
-    fill: #374151 !important;
-}
+[data-testid="stExpander"] summary:hover { color: #94a3b8 !important; }
+[data-testid="stExpander"] summary svg { fill: #374151 !important; }
 
 /* ── Code blocks ── */
 .stCode, [data-testid="stCode"], pre {
@@ -233,7 +203,7 @@ code {
     color: #93c5fd !important;
 }
 
-/* ── Dataframe / Results table ── */
+/* ── Dataframe ── */
 [data-testid="stDataFrame"] {
     border: 1px solid #1c2030 !important;
     border-radius: 8px !important;
@@ -264,7 +234,7 @@ code {
     border: 1px solid #1c2030 !important;
     border-radius: 8px !important;
     color: #c9d1d9 !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 14px !important;
     caret-color: #3b82f6 !important;
 }
@@ -274,9 +244,7 @@ code {
     box-shadow: none !important;
 }
 
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #2d3748 !important;
-}
+[data-testid="stChatInput"] textarea::placeholder { color: #2d3748 !important; }
 
 [data-testid="stChatInput"] button {
     background-color: #1e3a5f !important;
@@ -290,12 +258,12 @@ code {
     color: #fff !important;
 }
 
-/* ── Warning / info banners ── */
+/* ── Alert banners ── */
 [data-testid="stAlert"] {
     background-color: #0f1117 !important;
     border: 1px solid #1c2030 !important;
     border-radius: 6px !important;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 13px !important;
 }
 

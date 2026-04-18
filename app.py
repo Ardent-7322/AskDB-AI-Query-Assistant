@@ -10,7 +10,6 @@ load_dotenv()
 
 st.set_page_config(page_title="AskDB", layout="wide", page_icon="assets/favicon.ico")
 
-# Load CSS
 def load_css(path):
     with open(path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -131,44 +130,56 @@ with st.sidebar:
 # ── Header ────────────────────────────────────────────────────
 st.markdown("""
 <div class="askdb-header">
-    <div class="askdb-logo-box">
-        <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 5h14v2H3zm0 4h14v2H3zm0 4h9v2H3z"/>
-        </svg>
-    </div>
-    <div>
-        <div class="askdb-title">Ask<span>DB</span></div>
-        <div class="askdb-subtitle">Natural language to SQL — any database, any question.</div>
-    </div>
+    <svg class="askdb-logo-icon" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="100%" stop-color="#3b82f6"/>
+            </linearGradient>
+            <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.03"/>
+            </linearGradient>
+        </defs>
+        <!-- Bottom cylinder -->
+        <rect x="11" y="34" width="40" height="14" fill="url(#gfill)"/>
+        <ellipse cx="31" cy="48" rx="20" ry="6" stroke="url(#g1)" stroke-width="1.5" fill="none"/>
+        <ellipse cx="31" cy="34" rx="20" ry="6" stroke="url(#g1)" stroke-width="1.5" fill="none" stroke-dasharray="3 2"/>
+        <line x1="11" y1="34" x2="11" y2="48" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="51" y1="34" x2="51" y2="48" stroke="url(#g1)" stroke-width="1.5"/>
+        <!-- Top cylinder -->
+        <rect x="11" y="18" width="40" height="14" fill="url(#gfill)"/>
+        <ellipse cx="31" cy="32" rx="20" ry="6" stroke="url(#g1)" stroke-width="1.5" fill="none" stroke-dasharray="3 2"/>
+        <ellipse cx="31" cy="18" rx="20" ry="6" stroke="url(#g1)" stroke-width="2" fill="#1e3a5f" fill-opacity="0.4"/>
+        <line x1="11" y1="18" x2="11" y2="32" stroke="url(#g1)" stroke-width="1.5"/>
+        <line x1="51" y1="18" x2="51" y2="32" stroke="url(#g1)" stroke-width="1.5"/>
+        <!-- Query mark -->
+        <text x="26.5" y="44" font-family="IBM Plex Mono, monospace" font-weight="500" font-size="13" fill="#60a5fa">?</text>
+    </svg>
+    <div class="askdb-wordmark">Ask<span class="db">DB</span></div>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ── Helper: parse result into dataframe ───────────────────────
 def parse_result_to_df(raw_result, query):
-    """Try to turn raw DB result into a clean DataFrame."""
     try:
         if not raw_result or raw_result == "(no rows returned)":
             return None, 0
-        # langchain db.run() returns a string like "[('val1', 'val2'), ...]"
         import ast
         parsed = ast.literal_eval(raw_result)
         if not parsed:
             return None, 0
-        # extract column names from SELECT query
         import re
         select_match = re.search(r'SELECT\s+(.*?)\s+FROM', query, re.IGNORECASE | re.DOTALL)
         if select_match:
             cols_raw = select_match.group(1)
-            # handle aliases like COUNT(*) AS total
             cols = [c.strip().split(' ')[-1].replace('"','').replace('`','')
                     for c in cols_raw.split(',')]
         else:
             cols = [f"col_{i+1}" for i in range(len(parsed[0]))]
-
         if len(cols) != len(parsed[0]):
             cols = [f"col_{i+1}" for i in range(len(parsed[0]))]
-
         df = pd.DataFrame(parsed, columns=cols)
         return df, len(df)
     except Exception:
