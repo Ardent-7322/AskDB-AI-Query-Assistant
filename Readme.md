@@ -86,7 +86,7 @@ The answer comes back as a single sentence. The SQL query and raw result are ava
 
 ## Architecture
 
-![architecture](./architecture/architecture.svg)
+![architecture](./architecture/askdb_system_architecture.svg)
 
 
 **Components:**
