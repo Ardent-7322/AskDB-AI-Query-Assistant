@@ -86,34 +86,8 @@ The answer comes back as a single sentence. The SQL query and raw result are ava
 
 ## Architecture
 
-```
-User question
-      │
-      ▼
-┌─────────────────────────────────────────┐
-│              SQL Chain                  │
-│  Schema + History + Question → SQL      │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-         Database  (db.run)
-                   │
-            ┌──────┴──────┐
-          success        error
-                   │         │
-                   │    Retry Chain
-                   │    (fix + re-run)
-                   │         │
-                   └──────┬──┘
-                          ▼
-┌─────────────────────────────────────────┐
-│              NL Chain                   │
-│  Question + Query + Result → Answer     │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-        Plain English answer
-```
+![architecture](./architecture/architecture.svg)
+
 
 **Components:**
 
