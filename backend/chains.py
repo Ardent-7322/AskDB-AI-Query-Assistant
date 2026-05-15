@@ -3,6 +3,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
+# ── Semantic schema retriever (new) ───────────────────────────
+from backend.schema_retriever import SchemaRetriever
+
 
 def clean_query(raw: str) -> str:
     match = re.search(r"```sql\s*(.*?)\s*```", raw, re.DOTALL | re.IGNORECASE)
@@ -58,7 +61,7 @@ def get_column_tags(schema: str) -> str:
     return "\n".join(tags) if tags else "Infer column types from sample rows."
 
 
-def build_sql_chain(db, llm, db_type):
+def build_sql_chain(db, llm, db_type, retriever: SchemaRetriever):
     dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
     quote_char = '"' if db_type == "PostgreSQL" else "`"
 
@@ -126,10 +129,17 @@ STEP 5 — QUALITY:
 CURRENT QUESTION: {{question}}
 SQL:""")
 
+    # ── Key change: schema now comes from the retriever, not db.get_table_info() ──
+    def get_schema_for_question(inputs: dict) -> str:
+        question = inputs.get("question", "")
+        return retriever.get_relevant_schema(question)
+
     return (
         RunnablePassthrough.assign(
-            schema=lambda _: db.get_table_info(),
-            column_tags=lambda _: get_column_tags(db.get_table_info())
+            schema=get_schema_for_question,
+            column_tags=lambda inputs: get_column_tags(
+                retriever.get_relevant_schema(inputs.get("question", ""))
+            )
         )
         | prompt
         | llm
@@ -137,7 +147,7 @@ SQL:""")
     )
 
 
-def build_retry_sql_chain(db, llm, db_type):
+def build_retry_sql_chain(db, llm, db_type, retriever: SchemaRetriever):
     dialect = "PostgreSQL" if db_type == "PostgreSQL" else "SQLite" if db_type == "SQLite" else "MySQL"
     quote_char = '"' if db_type == "PostgreSQL" else "`"
 
@@ -160,6 +170,7 @@ FAILED SQL: {{failed_query}}
 ERROR: {{error}}
 FIXED SQL:""")
 
+    # Retry chain gets full schema — when a query fails we want maximum context to debug it
     return (
         RunnablePassthrough.assign(schema=lambda _: db.get_table_info())
         | prompt
@@ -186,8 +197,11 @@ Answer:""")
 
 
 def build_chains(db, llm, db_type):
+    # Build the retriever once per DB connection — shared across sql_chain and retry_chain
+    retriever = SchemaRetriever(db, top_k=3)
+
     return (
-        build_sql_chain(db, llm, db_type),
-        build_retry_sql_chain(db, llm, db_type),
+        build_sql_chain(db, llm, db_type, retriever),
+        build_retry_sql_chain(db, llm, db_type, retriever),
         build_nl_chain(llm)
     )
